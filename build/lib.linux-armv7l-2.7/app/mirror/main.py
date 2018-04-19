@@ -3,6 +3,7 @@ from app.mirror.news_display import Newsfeed
 from threading import _RLock
 import time
 import json
+import flicklib
 
 from Tkinter import *
 
@@ -25,6 +26,27 @@ subscribe.subscribe_to(client, "/iotappdev/test/", testCallback)
 def publish_callback():
 	publish.publish(client, "/iotappdev/test/", test_json, lock)
 
+airwheeltxt = ''
+some_value = 0
+
+@flicklib.airwheel()
+def spinny(delta):
+	global some_value
+	global airwheeltxt
+	some_value += delta
+	if some_value < -5000:
+		some_value = -5000
+	if some_value > 5000:
+		some_value = 5000
+	airwheeltxt = str(some_value/100)
+	amount = some_value/100
+	if amount > 10:
+		amount, some_value = 0, 0
+		move_category_down()
+	elif amount < -10:
+		amount, some_value = 0, 0
+		move_category_up()
+
 # GUI 
 gui = Tk()
 
@@ -33,11 +55,8 @@ gui.configure(background='black')
 news_display = Newsfeed(gui)
 news_display.pack(fill=BOTH, expand=YES, padx=80, pady=20)
 
-#~ south_frame = Frame(gui, background="black")
-#~ south_frame.pack(side=BOTTOM, fill=BOTH, expand=YES)
-
-#~ publish_button = Button(gui, text="Publish", command=publish_callback)
-#~ publish_button.pack()
+#~ test_lbl = Label(gui, text="heya", font=('Arial', 20), fg='white', bg='black')
+#~ test_lbl.pack()
 
 def enter_fullscreen(event=None):
 	gui.attributes("-fullscreen", True)

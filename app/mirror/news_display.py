@@ -35,23 +35,29 @@ class Newsfeed(Frame):
 		self.selected_YES_img = self.selected_YES_img.resize((16, 16))
 		self.selected_YES_img = self.selected_YES_img.convert('RGB')
 		self.selected_YES = ImageTk.PhotoImage(self.selected_YES_img)
+		
 		self.selected_NO_img = Image.open("assets/selected_NO.jpg")
 		self.selected_NO_img = self.selected_NO_img.resize((16, 16))
 		self.selected_NO_img = self.selected_NO_img.convert('RGB')
 		self.selected_NO = ImageTk.PhotoImage(self.selected_NO_img)
 		
 		self.title_lbl = Label(self, text="News", font=('Arial', 48), fg="white", bg="black")
-		self.title_lbl.pack(anchor=NW)
+		self.title_lbl.pack(side=TOP, anchor=NW)
+		
+		self.rss_feeds = {}
+		for category in self.category_names:
+			url = "https://news.google.com/news/rss/headlines/section/topic/%s?ned=en_ie&gl=IE&hl=en-IE" % self.category_url[category]
+			self.rss_feeds[category] = feedparser.parse(url)
 		
 		self.categories_frame = Frame(self, bg='black')
-		self.categories_frame.pack(anchor=NE)
+		self.categories_frame.pack(side=TOP, anchor=NE)
 		self.build_categories()
 		
 		self.headlines_frame = Frame(self, bg='black')
 		self.headlines_frame.pack(side=BOTTOM, anchor=SW)
 		self.build_headlines()
 	
-	# move up through categories
+	# move up or down through categories
 	def change_category(self, direction):
 		self.categories_frame.winfo_children()[self.selected_category].icon_lbl.configure(image=self.selected_NO)
 		self.categories_frame.winfo_children()[self.selected_category].icon_lbl.image = self.selected_NO
@@ -62,12 +68,6 @@ class Newsfeed(Frame):
 			self.selected_category = 0
 		self.categories_frame.winfo_children()[self.selected_category].icon_lbl.configure(image=self.selected_YES)
 		self.categories_frame.winfo_children()[self.selected_category].icon_lbl.image = self.selected_YES
-		self.build_headlines()
-	
-	# move down through categories
-	def change_category_down(self):
-		self.selected_category += 1
-		self.build_categories()
 		self.build_headlines()
 	
 	# build Category frames
@@ -83,16 +83,12 @@ class Newsfeed(Frame):
 			for line in self.headlines_frame.winfo_children():
 				line.destroy()
 			
-			# connect to relevant news RSS feed
-			url = "https://news.google.com/news/rss/headlines/section/topic/%s?ned=en_ie&gl=IE&hl=en-IE" % self.category_url[self.category_names[self.selected_category]]
-			rss = feedparser.parse(url)
-			
 			title = Label(self.headlines_frame, text=self.category_names[self.selected_category], font=('Arial', 28), fg="white", bg="black")
 			title.pack(side=TOP, anchor=W)
 			
 			# limit length of headline to 80 characters
-			for article in rss.entries:
-				if len(article.title) < 80:
+			for article in self.rss_feeds[self.category_names[self.selected_category]].entries:
+				if len(article.title) < 100:
 					line = Headline(self.headlines_frame, article.title)
 					line.pack(side=TOP, anchor=W)
 				if len(self.headlines_frame.winfo_children()) > 4:
