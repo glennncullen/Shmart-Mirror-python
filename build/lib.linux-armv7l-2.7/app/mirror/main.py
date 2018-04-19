@@ -1,7 +1,5 @@
-import app.mqtt.publish as publish
-import app.mqtt.connect as connect
-import app.mqtt.subscribe as subscribe
-from app.handler.handler import Handler
+from app.mqtt import publish, connect, subscribe
+from app.mirror.news_display import Newsfeed
 from threading import _RLock
 import time
 import json
@@ -24,21 +22,39 @@ test_json["testField"] = "testing this"
 
 subscribe.subscribe_to(client, "/iotappdev/test/", testCallback)
 
-
-#~ while True:
-	#~ try:
-		#~ time.sleep(2)
-		#~ publish.publish(client, "/iotappdev/test/", test_json, lock)
-	#~ except KeyboardInterrupt:
-		#~ break
-
 def publish_callback():
 	publish.publish(client, "/iotappdev/test/", test_json, lock)
 
 # GUI 
-root = Tk()
-label = Label(root, text="press to test")
-label.pack()
-button = Button(root, text="Publish", command=publish_callback)
-button.pack()
-root.mainloop()
+gui = Tk()
+
+gui.configure(background='black')
+
+news_display = Newsfeed(gui)
+news_display.pack(fill=BOTH, expand=YES, padx=80, pady=20)
+
+#~ south_frame = Frame(gui, background="black")
+#~ south_frame.pack(side=BOTTOM, fill=BOTH, expand=YES)
+
+#~ publish_button = Button(gui, text="Publish", command=publish_callback)
+#~ publish_button.pack()
+
+def enter_fullscreen(event=None):
+	gui.attributes("-fullscreen", True)
+
+def close_fullscreen(event=None):
+	gui.attributes("-fullscreen", False)
+
+def move_category_up(event=None):
+	news_display.change_category(-1)
+
+def move_category_down(event=None):
+	news_display.change_category(1)
+
+gui.bind('<Shift-Up>', enter_fullscreen)
+gui.bind('<Escape>', close_fullscreen)
+gui.bind('<Up>', move_category_up)
+gui.bind('<Down>', move_category_down)
+
+
+gui.mainloop()

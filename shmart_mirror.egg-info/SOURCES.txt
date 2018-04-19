@@ -5,6 +5,10 @@ app/handler/__init__.py
 app/handler/handler.py
 app/mirror/__init__.py
 app/mirror/main.py
+app/mirror/news_display.py
+app/mirror/notes_display.py
+app/mirror/weather_display.py
+app/mirror/welcome_display.py
 app/mqtt/__init__.py
 app/mqtt/connect.py
 app/mqtt/publish.py
@@ -14,4 +18,5 @@ app/sensors/flick.py
 shmart_mirror.egg-info/PKG-INFO
 shmart_mirror.egg-info/SOURCES.txt
 shmart_mirror.egg-info/dependency_links.txt
+shmart_mirror.egg-info/requires.txt
 shmart_mirror.egg-info/top_level.txt
