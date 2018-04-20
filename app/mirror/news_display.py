@@ -1,5 +1,4 @@
 from Tkinter import *
-import locale
 import feedparser
 from PIL import Image
 from PIL import ImageTk
@@ -9,8 +8,12 @@ class Newsfeed(Frame):
 	def __init__(self, parent):
 		Frame.__init__(self, parent)
 		
+		self.selected_headline = 1
+		self.current_headlines = {}
+		self.headline_titles = []
+		
 		self.configure(background='black')
-		self.selected_category = 0
+		self.selected_category = 1
 		self.category_names = [
 						'World', 
 						'Ireland', 
@@ -36,13 +39,15 @@ class Newsfeed(Frame):
 		self.selected_YES_img = self.selected_YES_img.convert('RGB')
 		self.selected_YES = ImageTk.PhotoImage(self.selected_YES_img)
 		
+		self.newspaper_YES_img = Image.open("assets/newspaper_YES.jpg")
+		self.newspaper_YES_img = self.newspaper_YES_img.resize((16, 16))
+		self.newspaper_YES_img = self.newspaper_YES_img.convert('RGB')
+		self.newspaper_YES = ImageTk.PhotoImage(self.newspaper_YES_img)
+		
 		self.selected_NO_img = Image.open("assets/selected_NO.jpg")
 		self.selected_NO_img = self.selected_NO_img.resize((16, 16))
 		self.selected_NO_img = self.selected_NO_img.convert('RGB')
 		self.selected_NO = ImageTk.PhotoImage(self.selected_NO_img)
-		
-		self.title_lbl = Label(self, text="News", font=('Arial', 48), fg="white", bg="black")
-		self.title_lbl.pack(side=TOP, anchor=NW)
 		
 		self.rss_feeds = {}
 		for category in self.category_names:
@@ -57,44 +62,71 @@ class Newsfeed(Frame):
 		self.headlines_frame.pack(side=BOTTOM, anchor=SW)
 		self.build_headlines()
 	
+	def change_headline(self, direction):
+		if len(self.headline_titles) is 1:
+			return
+		self.headlines_frame.winfo_children()[self.selected_headline].icon_lbl.configure(image=self.selected_NO)
+		self.headlines_frame.winfo_children()[self.selected_headline].icon_lbl.image = self.selected_NO
+		self.selected_headline += direction
+		if self.selected_headline < 1:
+			self.selected_headline = len(self.headline_titles) - 1
+		elif self.selected_headline > len(self.headline_titles) - 1:
+			self.selected_headline = 1
+		self.headlines_frame.winfo_children()[self.selected_headline].icon_lbl.configure(image=self.newspaper_YES)
+		self.headlines_frame.winfo_children()[self.selected_headline].icon_lbl.image = self.newspaper_YES
+	
 	# move up or down through categories
 	def change_category(self, direction):
 		self.categories_frame.winfo_children()[self.selected_category].icon_lbl.configure(image=self.selected_NO)
 		self.categories_frame.winfo_children()[self.selected_category].icon_lbl.image = self.selected_NO
 		self.selected_category += direction
-		if self.selected_category < 0:
-			self.selected_category = 7
-		elif self.selected_category > 7:
-			self.selected_category = 0
+		if self.selected_category < 1:
+			self.selected_category = 8
+		elif self.selected_category > 8:
+			self.selected_category = 1
 		self.categories_frame.winfo_children()[self.selected_category].icon_lbl.configure(image=self.selected_YES)
 		self.categories_frame.winfo_children()[self.selected_category].icon_lbl.image = self.selected_YES
 		self.build_headlines()
 	
+	# get link of selected headline
+	def get_link(self):
+		return self.current_headlines[self.headline_titles[self.selected_headline]]
+		
 	# build Category frames
-	def build_categories(self):		
+	def build_categories(self):
+		self.title_lbl = Label(self.categories_frame, text="News", font=('Arial', 28), fg="white", bg="black")
+		self.title_lbl.pack(side=TOP, anchor=NW)
 		for category in self.category_names:
-			line = Category(self.categories_frame, category, self.category_names[self.selected_category])
+			line = Category(self.categories_frame, category, self.category_names[0])
 			line.pack(side=TOP, anchor=W)
+		self.category_names.insert(0, 'News')
 	
 	# build Headline frames
 	def build_headlines(self):
 		try:
+			self.selected_headline = 1
+			self.current_headlines = {}
+			self.headline_titles = []
 			# clear previous headlines
 			for line in self.headlines_frame.winfo_children():
 				line.destroy()
 			
-			title = Label(self.headlines_frame, text=self.category_names[self.selected_category], font=('Arial', 28), fg="white", bg="black")
+			title = Label(self.headlines_frame, text=self.category_names[self.selected_category], font=('Arial', 24), fg="white", bg="black")
 			title.pack(side=TOP, anchor=W)
+			self.headline_titles.append(self.category_names[self.selected_category])
 			
 			# limit length of headline to 80 characters
 			for article in self.rss_feeds[self.category_names[self.selected_category]].entries:
-				if len(article.title) < 100:
-					line = Headline(self.headlines_frame, article.title)
+				if len(article.title) < 80:
+					self.headline_titles.append(article.title)
+					self.current_headlines[article.title] = article.link
+					line = Headline(self.headlines_frame, article.title, (article.title is self.headline_titles[self.selected_headline]))
 					line.pack(side=TOP, anchor=W)
 				if len(self.headlines_frame.winfo_children()) > 4:
 					break
 			
 		except Exception as error:
+			traceback.print_exc()
 			print "Error: %s. Unable to retrieve news." % error
 
 
@@ -117,17 +149,21 @@ class Category(Frame):
 		self.icon_lbl.image = pic
 		self.icon_lbl.pack(side=LEFT, anchor=CENTER)
 		
-		self.category_lbl = Label(self, text=category_name, font=('Arial', 18), fg='white', bg='black')
+		self.category_lbl = Label(self, text=category_name, font=('Arial', 16), fg='white', bg='black')
 		self.category_lbl.pack(side=LEFT, anchor=CENTER)
 
 
 # small frame for displaying the headlines
 class Headline(Frame):
-	def __init__(self, parent, headline):
+	def __init__(self, parent, headline, is_selected):
 		Frame.__init__(self, parent, bg='black')
 		
-		icon = Image.open("assets/newspaper_symbol.jpg")
-		icon = icon.resize((16, 16))
+		if is_selected:
+			icon = Image.open("assets/newspaper_YES.jpg")
+		else:
+			icon = Image.open("assets/selected_NO.jpg")
+		
+		icon = icon.resize((14, 14))
 		icon = icon.convert('RGB')
 		pic = ImageTk.PhotoImage(icon)
 		
@@ -135,5 +171,5 @@ class Headline(Frame):
 		self.icon_lbl.image = pic
 		self.icon_lbl.pack(side=LEFT, anchor=CENTER)
 		
-		self.headline_lbl = Label(self, text=headline, font=('Arial', 14), fg='white', bg="black")
+		self.headline_lbl = Label(self, text=headline, font=('Arial', 16), fg='white', bg="black")
 		self.headline_lbl.pack(side=LEFT, anchor=N)

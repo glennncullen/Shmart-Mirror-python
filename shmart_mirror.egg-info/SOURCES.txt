@@ -2,7 +2,6 @@ README.txt
 setup.py
 app/__init__.py
 app/handler/__init__.py
-app/handler/handler.py
 app/mirror/__init__.py
 app/mirror/main.py
 app/mirror/news_display.py
