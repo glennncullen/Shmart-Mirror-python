@@ -1,6 +1,7 @@
 from app.mqtt import publish, connect, subscribe
-from app.mirror.weather_display import Weather
+from app.mirror.weather_display import WeatherFeed
 from app.mirror.news_display import Newsfeed
+from app.mirror.notes_display import NotesFeed
 from threading import _RLock
 import time
 import json
@@ -80,10 +81,14 @@ def spinny(delta):
 	amount = some_value/100
 	if amount > 7.5:
 		amount, some_value = 0, 0
-		news_display.change_category(1)
+		#~ news_display.change_category(
+		weather_display.change_day(1)
+		publish_weather()
 	elif amount < -7.5:
 		amount, some_value = 0, 0
-		news_display.change_category(-1)
+		#~ news_display.change_category(-1)
+		weather_display.change_day(-1)
+		publish_weather()
 
 # GUI 
 gui = Tk()
@@ -94,8 +99,11 @@ gui.config(cursor="none")
 #~ news_display = Newsfeed(gui)
 #~ news_display.pack(fill=BOTH, expand=YES, padx=80, pady=20)
 
-weather_display = Weather(gui)
-weather_display.pack(anchor=NE, expand=YES, padx=40, pady=40)
+#~ weather_display = WeatherFeed(gui)
+#~ weather_display.pack(anchor=NE, expand=YES, padx=40, pady=40)
+
+notes_display = NotesFeed(gui)
+notes_display.pack(fill=BOTH, expand=YES, padx=40, pady=40)
 
 #~ test_lbl = Label(gui, text="heya", font=('Arial', 20), fg='white', bg='black')
 #~ test_lbl.pack()
@@ -108,15 +116,15 @@ def close_fullscreen(event=None):
 
 
 def move_day_up(event=None):
-	weather_display.change_day(-1)
+	notes_display.change_day(-1)
 
 def move_day_down(event=None):
-	weather_display.change_day(1)
+	notes_display.change_day(1)
 
 gui.bind('<Shift-Up>', enter_fullscreen)
 gui.bind('<Escape>', close_fullscreen)
-gui.bind('<Up>', move_day_up)
-gui.bind('<Down>', move_day_down)
+gui.bind('<Up>', move_note_up)
+gui.bind('<Down>', move_note_down)
 
 def on_closing(event=None):
 	gui.destroy()

@@ -7,7 +7,7 @@ from PIL import ImageTk
 from datetime import datetime
 
 
-class Weather(Frame):
+class WeatherFeed(Frame):
 	def __init__(self, parent):
 		Frame.__init__(self, parent)
 		
@@ -15,6 +15,16 @@ class Weather(Frame):
 		self.location = {}
 		self.forecast = []
 		self.selected_day = 0
+		
+		self.selected_YES_img = Image.open("assets/selected_YES.jpg")
+		self.selected_YES_img = self.selected_YES_img.resize((16, 16))
+		self.selected_YES_img = self.selected_YES_img.convert('RGB')
+		self.selected_YES = ImageTk.PhotoImage(self.selected_YES_img)
+		
+		self.selected_NO_img = Image.open("assets/selected_NO.jpg")
+		self.selected_NO_img = self.selected_NO_img.resize((16, 16))
+		self.selected_NO_img = self.selected_NO_img.convert('RGB')
+		self.selected_NO = ImageTk.PhotoImage(self.selected_NO_img)
 		
 		# request to get ip
 		try:
@@ -67,22 +77,15 @@ class Weather(Frame):
 	
 	# move day in direction given
 	def change_day(self, direction):
-		#~ previous_lbl = self.forecast_frame.winfo_children()[self.selected_day].day_lbl
-		#~ remove_underline = tkFont.Font(previous_lbl, previous_lbl.cget("font"))
-		#~ remove_underline.configure(underline = False)
-		#~ previous_lbl.configure(font=remove_underline)
-		#~ print "before: %s" % self.selected_day
+		self.forecast_frame.winfo_children()[self.selected_day].selected_lbl.configure(image=self.selected_NO)
+		self.forecast_frame.winfo_children()[self.selected_day].selected_lbl.image = self.selected_NO
 		self.selected_day += direction
-		#~ print "after: %s" % self.selected_day
 		if self.selected_day < 0:
 			self.selected_day = 5
 		elif self.selected_day > 5:
 			self.selected_day = 0
-		#~ print "conditions: %s" % self.selected_day, "\n"
-		#~ next_lbl = self.forecast_frame.winfo_children()[self.selected_day].day_lbl
-		#~ underline = tkFont.Font(next_lbl, next_lbl.cget("font"))
-		#~ underline.configure(underline = True)
-		#~ next_lbl.configure(font=underline)
+		self.forecast_frame.winfo_children()[self.selected_day].selected_lbl.configure(image=self.selected_YES)
+		self.forecast_frame.winfo_children()[self.selected_day].selected_lbl.image = self.selected_YES
 	
 	def create_entry(self, entry):
 		new_entry = {}
@@ -139,11 +142,21 @@ class Weather(Frame):
 class Day(Frame):
 	def __init__(self, parent, forecast, selected):
 		Frame.__init__(self, parent, bg='black')
+				
+		if selected:
+			self.selected_img = Image.open("assets/selected_YES.jpg")
+		else:
+			self.selected_img = Image.open("assets/selected_NO.jpg")
+		self.selected_img = self.selected_img.resize((16, 16))
+		self.selected_img = self.selected_img.convert('RGB')
+		self.selected = ImageTk.PhotoImage(self.selected_img)
+		self.selected_lbl = Label(self, bg='black', image=self.selected)
+		self.selected_lbl.image = self.selected
+		self.selected_lbl.pack(side=LEFT, anchor=W)
 		
 		icon = Image.open("assets/%s.png" % forecast["icon"])
 		icon.convert('RGB')
 		pic = ImageTk.PhotoImage(icon)
-		
 		self.icon_lbl = Label(self, bg='black', image=pic, underline=0)
 		self.icon_lbl.image = pic
 		self.icon_lbl.pack(side=LEFT, anchor=N, padx=5)
@@ -156,9 +169,4 @@ class Day(Frame):
 		
 		self.day_lbl = Label(self, text=forecast["day"], font=('Arial', 18), fg='white', bg='black')
 		self.day_lbl.pack(anchor=W)
-		
-		if selected:
-			underline = tkFont.Font(self.day_lbl, self.day_lbl.cget("font"))
-			underline.configure(underline = True)
-			self.day_lbl.configure(font=underline)
 		
