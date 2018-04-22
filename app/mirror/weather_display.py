@@ -31,7 +31,6 @@ class WeatherFeed(Frame):
 			ip_api_url = 'https://api.ipify.org'
 			self.ip = requests.get(ip_api_url).text
 		except Exception as error:
-			#~ traceback.print_exc()
 			print "Error requesting ip: %s" % error
 		# request to get location
 		try:
@@ -39,7 +38,6 @@ class WeatherFeed(Frame):
 			response = requests.get(location_api_url)
 			self.location = json.loads(response.text)
 		except Exception as error:
-			#~ traceback.print_exc()
 			print "Error requesting location: %s" % error
 		# request to get weather data
 		try:

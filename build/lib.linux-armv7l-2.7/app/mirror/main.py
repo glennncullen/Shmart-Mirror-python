@@ -115,10 +115,10 @@ def close_fullscreen(event=None):
 	gui.attributes("-fullscreen", False)
 
 
-def move_day_up(event=None):
+def move_note_up(event=None):
 	notes_display.change_day(-1)
 
-def move_day_down(event=None):
+def move_note_down(event=None):
 	notes_display.change_day(1)
 
 gui.bind('<Shift-Up>', enter_fullscreen)

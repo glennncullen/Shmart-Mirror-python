@@ -9,5 +9,11 @@ setup(
     version="1.5",
     author='Glenn Cullen',
     description='Home Smart Mirror application',
-    install_requires=['feedparser', 'requests', 'Pillow', 'python-firebase']
+    install_requires=[
+				'feedparser', 
+				'requests==2.18.0', 
+				'Pillow', 
+				'python-firebase', 
+				'google-cloud-storage'
+				]
     )
