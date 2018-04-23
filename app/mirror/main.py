@@ -59,19 +59,22 @@ def publish_weather():
 @flicklib.double_tap()
 def doubletap(position):
 	if position is not None:
-		publish_link()
+		#~ publish_link()
+		notes_display.delete_note(lock)
 
 @flicklib.flick()
 def flick(start, finish):
 	flick_direction = '' + start[0] + finish[0]
 	if flick_direction == 'ns':
 		#~ news_display.change_headline(1)
-		weather_display.change_day(1)
-		publish_weather()
+		#~ weather_display.change_day(1)
+		notes_display.change_note(1)
+		#~ publish_weather()
 	elif flick_direction == 'sn':
 		#~ news_display.change_headline(-1)
-		weather_display.change_day(-1)
-		publish_weather()
+		#~ weather_display.change_day(-1)
+		notes_display.change_note(-1)
+		#~ publish_weather()
 
 some_value = 0
 @flicklib.airwheel()
@@ -82,13 +85,15 @@ def spinny(delta):
 	if amount > 7.5:
 		amount, some_value = 0, 0
 		#~ news_display.change_category(
-		weather_display.change_day(1)
-		publish_weather()
+		#~ weather_display.change_day(1)
+		notes_display.change_note(1)
+		#~ publish_weather()
 	elif amount < -7.5:
 		amount, some_value = 0, 0
 		#~ news_display.change_category(-1)
-		weather_display.change_day(-1)
-		publish_weather()
+		#~ weather_display.change_day(-1)
+		notes_display.change_note(-1)
+		#~ publish_weather()
 
 # GUI 
 gui = Tk()
@@ -116,10 +121,10 @@ def close_fullscreen(event=None):
 
 
 def move_note_up(event=None):
-	notes_display.change_day(-1)
+	notes_display.change_note(-1)
 
 def move_note_down(event=None):
-	notes_display.change_day(1)
+	notes_display.change_note(1)
 
 gui.bind('<Shift-Up>', enter_fullscreen)
 gui.bind('<Escape>', close_fullscreen)

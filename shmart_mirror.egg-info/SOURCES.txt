@@ -3,6 +3,7 @@ setup.py
 app/__init__.py
 app/handler/__init__.py
 app/mirror/__init__.py
+app/mirror/camera_display.py
 app/mirror/main.py
 app/mirror/news_display.py
 app/mirror/notes_display.py

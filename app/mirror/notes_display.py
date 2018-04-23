@@ -9,26 +9,85 @@ class NotesFeed(Frame):
 	def __init__(self, parent):
 		Frame.__init__(self, parent)
 		
-		firebase_db = firebase.FirebaseApplication('https://shmart-mirror.firebaseio.com/', None)
+		self.configure(background='black')
 		
-		print firebase_db.post('/notes', 'Is this real life?')
+		self.firebase_db = firebase.FirebaseApplication('https://shmart-mirror.firebaseio.com/', None)
+		self.notes = self.firebase_db.get('/notes', None)
+		self.selected_note = 1
 		
-		print firebase_db.get('/notes', None)
+		self.selected_YES_img = Image.open("assets/selected_YES.jpg")
+		self.selected_YES_img = self.selected_YES_img.resize((16, 16))
+		self.selected_YES_img = self.selected_YES_img.convert('RGB')
+		self.selected_YES = ImageTk.PhotoImage(self.selected_YES_img)
 		
-		#~ firebase_img_db = firebase.FirebaseApplication('gs://shmart-mirror.appspot.com', None)
+		self.selected_NO_img = Image.open("assets/selected_NO.jpg")
+		self.selected_NO_img = self.selected_NO_img.resize((16, 16))
+		self.selected_NO_img = self.selected_NO_img.convert('RGB')
+		self.selected_NO = ImageTk.PhotoImage(self.selected_NO_img)
 		
-		icon = Image.open("assets/selected_NO.jpg")
+		self.notes_frame = Frame(self, bg='black')
+		self.notes_frame.pack(side=BOTTOM, anchor=W)
+		self.build_notes()
+	
+	# move up or down through notes
+	def change_note(self, direction):
+		#~ print len(self.notes)
+		if len(self.notes) == 0:
+			return
+		self.notes_frame.winfo_children()[self.selected_note].icon_lbl.configure(image=self.selected_NO)
+		self.notes_frame.winfo_children()[self.selected_note].icon_lbl.image = self.selected_NO
+		#~ print self.selected_note
+		self.selected_note += direction
+		if self.selected_note < 1:
+			self.selected_note = len(self.notes) 
+		elif self.selected_note > len(self.notes):
+			self.selected_note = 1
+		#~ print self.selected_note
+		self.notes_frame.winfo_children()[self.selected_note].icon_lbl.configure(image=self.selected_YES)
+		self.notes_frame.winfo_children()[self.selected_note].icon_lbl.image = self.selected_YES
+	
+	def delete_note(self, lock):
+		with lock:
+			self.firebase_db.delete('/notes', self.notes.keys()[self.selected_note - 1])
+			self.notes = self.firebase_db.get('/notes', None)
+			#~ self.notes_frame.winfo_children()[self.selected_note].destroy()
+			self.selected_note = 1
+			self.build_notes()
+			#~ self.notes_frame.winfo_children()[self.selected_note].icon_lbl.configure(image=self.selected_YES)
+			#~ self.notes_frame.winfo_children()[self.selected_note].icon_lbl.image = self.selected_YES
+	
+	def build_notes(self):
+		for line in self.notes_frame.winfo_children():
+			line.destroy()
+		self.title_lbl = Label(self.notes_frame, text="Notes", font=('Arial', 28), fg="white", bg="black")
+		self.title_lbl.pack(side=TOP, anchor=NW, pady=10)
+		for note in self.notes:
+			line = Note(self.notes_frame, self.notes[note], (self.notes.values()[0] == self.notes[note]))
+			line.pack(side=TOP, anchor=W)
+	
+		
+		#~ firebase_db.patch('/notes', {'02' : 'Is this real life?'})
+		
+		#~ firebase_db.get('/notes', None)
+		
+		#~ firebase_db.delete('/notes', '02')
+
+class Note(Frame):
+	def __init__(self, parent, note, selected):
+		Frame.__init__(self, parent, bg='black')
+		
+		if selected:
+			icon = Image.open("assets/selected_YES.jpg")
+		else:
+			icon = Image.open("assets/selected_NO.jpg")
+		
+		icon = icon.resize((16, 16))
+		icon = icon.convert('RGB')
 		pic = ImageTk.PhotoImage(icon)
 		
-		os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/shmart_mirror/app/mirror/credentials/Shmart Mirror-b8c85a15ed82.json"
-		storage_client = storage.Client()
-		bucket_name = 'tesht_bucket_04'
-		bucket = storage_client.get_bucket(bucket_name)
+		self.icon_lbl = Label(self, bg='black', image=pic)
+		self.icon_lbl.image = pic
+		self.icon_lbl.pack(side=LEFT, anchor=CENTER, padx=10)
 		
-		blob = bucket.get_blob("selected_YES.jpg")
-		
-		with open('assets/selected_YES.jpg', 'rb') as my_file:
-			blob.upload_from_file(my_file)
-		
-		download_blob = bucket.get_blob("selected_YES.jpg")
-		print type(download_blob.download_as_string())
+		self.note_lbl = Label(self, text=note, font=('Arial', 20), fg='white', bg="black")
+		self.note_lbl.pack(side=LEFT, anchor=N, fill=X)
