@@ -8,6 +8,7 @@ app/mirror/main.py
 app/mirror/news_display.py
 app/mirror/notes_display.py
 app/mirror/weather_display.py
+app/mirror/welcome_display.py
 app/mqtt/__init__.py
 app/mqtt/connect.py
 app/mqtt/publish.py

@@ -89,7 +89,7 @@ class WeatherFeed(Frame):
 		self.forecast_frame.winfo_children()[self.selected_day].selected_lbl.image = self.selected_YES
 		publish.publish(args[0], "/iotappdev/weather/day/", weather_display.forecast[weather_display.selected_day], args[1])
 	
-	def double_tap(self):
+	def double_tap(self, *args):
 		return
 	
 	def airwheel(self, direction, *args):

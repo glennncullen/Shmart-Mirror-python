@@ -2,34 +2,17 @@ from app.mqtt import publish, connect, subscribe
 from app.mirror.weather_display import WeatherFeed
 from app.mirror.news_display import NewsFeed
 from app.mirror.notes_display import NotesFeed
+from app.mirror.welcome_display import WelcomeFeed
 from threading import _RLock
 import time
 import json
 import flicklib
-
 from Tkinter import *
 
 lock = _RLock()
 client = connect.get_client()
 displays = []
 ready = False
-
-#~ def testCallback(client, userdata, message):
-	#~ print(message.payload)
-	#~ try:
-		#~ json_message = json.loads(message.payload)
-		#~ print(json_message["testField"])
-	#~ except ValueError:
-		#~ print "Unable to decode json for testCallBack \n\t incoming message: ", message.payload
-
-#~ test_json = {}
-#~ test_json["testField"] = "testing this"
-
-#~ subscribe.subscribe_to(client, "/iotappdev/test/", testCallback)
-
-#~ def publish_callback():
-	#~ publish.publish(client, "/iotappdev/test/", test_json, lock)
-
 
 def news_article_link_callback(client, userdata, message):
 	try:
@@ -45,8 +28,30 @@ def weather_day_callback(client, userdata, message):
 	except ValueError:
 		print "Unable to decode json for testCallBack \n\t incoming message: ", message.payload
 
+
+def display_callback(client, userdata, message):
+	try:
+		json_message = json.loads(message.payload)
+		#~ print json_message
+	except ValueError:
+		print "Unable to decode json for displayCallBack \n\t incoming message: ", message.payload
+
+def auth_callback(client, userdata, message):
+	try:
+		json_message = json.loads(message.payload)
+		for display in displays:
+			if isinstance(display, WelcomeFeed):
+				if display.check_auth(json_message["auth"]):
+					publish.publish(client, '/iotappdev/android/auth/', {'auth' :'authorised'}, lock)
+			return
+		#~ print json_message
+	except ValueError:
+		print "Unable to decode json for displayCallBack \n\t incoming message: ", message.payload
+
 subscribe.subscribe_to(client, "/iotappdev/news/article/link/", news_article_link_callback)
 subscribe.subscribe_to(client, "/iotappdev/weather/day/", weather_day_callback)
+subscribe.subscribe_to(client, "/iotappdev/display/", display_callback)
+subscribe.subscribe_to(client, "/iotappdev/pi/auth/", auth_callback)
 
 
 def publish_link():
@@ -54,8 +59,8 @@ def publish_link():
 	link_json["link"] = news_display.get_link()
 	publish.publish(client, "/iotappdev/news/article/link/", link_json, lock)
 
-def publish_weather():
-	publish.publish(client, "/iotappdev/weather/day/", weather_display.forecast[weather_display.selected_day], lock)
+def publish_current_display():
+	publish.publish(client, "/iotappdev/display/", {'display' : displays[selected_display].__class__.__name__}, lock)
 
 selected_display = 0
 def change_display(direction):
@@ -66,8 +71,7 @@ def change_display(direction):
 		selected_display = len(displays) - 1
 	elif selected_display > len(displays) - 1:
 		selected_display = 0
-	print type(displays[selected_display]) is WeatherFeed, type(displays[selected_display]), type(displays[selected_display]) is WeatherFeed()
-	if type(displays[selected_display]) is WeatherFeed:
+	if isinstance(displays[selected_display], WeatherFeed):
 		displays[selected_display].pack(anchor=NE, expand=YES, padx=40, pady=40)
 	else:
 		displays[selected_display].pack(fill=BOTH, expand=YES, padx=40, pady=40)
@@ -90,9 +94,13 @@ def flick(start, finish):
 	elif flick_direction == 'sn':
 		displays[selected_display].change_vertical_focus(-1, client, lock)
 	elif flick_direction == 'we':
-		change_display(1)
+		if not isinstance(displays[selected_display], WelcomeFeed):
+			change_display(1)
+			publish_current_display()
 	elif flick_direction == 'ew':
-		change_display(-1)
+		if not isinstance(displays[selected_display], WelcomeFeed):
+			change_display(-1)
+			publish_current_display()
 
 
 some_value = 0
@@ -115,15 +123,18 @@ gui = Tk()
 gui.configure(background='black')
 gui.config(cursor="none")
 
+print 'starting WelcomeFeed'
+displays.append(WelcomeFeed(gui))
+print 'WelcomeFeed started'
 print 'starting NotesFeed'
 displays.append(NotesFeed(gui))
 print 'NotesFeed started'
 print 'starting NewsFeed'
 displays.append(NewsFeed(gui))
 print 'NewsFeed started'
-print 'starting WeatherFeed'
-displays.append(WeatherFeed(gui))
-print 'WeatherFeed started'
+#~ print 'starting WeatherFeed'
+#~ displays.append(WeatherFeed(gui))
+#~ print 'WeatherFeed started'
 displays[selected_display].pack(fill=BOTH, expand=YES, padx=40, pady=40)
 
 ready = True
@@ -137,9 +148,11 @@ def close_fullscreen(event=None):
 
 def change_display_left(event=None):
 	change_display(-1)
+	publish_current_display()
 
 def change_display_right(event=None):
 	change_display(1)
+	publish_current_display()
 
 gui.bind('<Shift-Up>', enter_fullscreen)
 gui.bind('<Escape>', close_fullscreen)

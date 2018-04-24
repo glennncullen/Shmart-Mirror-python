@@ -1,3 +1,4 @@
+from app.mqtt import publish
 from Tkinter import *
 import feedparser
 from PIL import Image
