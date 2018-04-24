@@ -39,12 +39,12 @@ def display_callback(client, userdata, message):
 def auth_callback(client, userdata, message):
 	try:
 		json_message = json.loads(message.payload)
+		print json_message
 		for display in displays:
 			if isinstance(display, WelcomeFeed):
 				if display.check_auth(json_message["auth"]):
 					publish.publish(client, '/iotappdev/android/auth/', {'auth' :'authorised'}, lock)
 			return
-		#~ print json_message
 	except ValueError:
 		print "Unable to decode json for displayCallBack \n\t incoming message: ", message.payload
 
