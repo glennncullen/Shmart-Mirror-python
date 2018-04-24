@@ -4,7 +4,7 @@ from PIL import Image
 from PIL import ImageTk
 
 
-class Newsfeed(Frame):
+class NewsFeed(Frame):
 	def __init__(self, parent):
 		Frame.__init__(self, parent)
 		
@@ -62,7 +62,7 @@ class Newsfeed(Frame):
 		self.headlines_frame.pack(side=BOTTOM, anchor=SW)
 		self.build_headlines()
 	
-	def change_headline(self, direction):
+	def change_vertical_focus(self, direction, *args):
 		if len(self.headline_titles) is 1:
 			return
 		self.headlines_frame.winfo_children()[self.selected_headline].icon_lbl.configure(image=self.selected_NO)
@@ -76,7 +76,7 @@ class Newsfeed(Frame):
 		self.headlines_frame.winfo_children()[self.selected_headline].icon_lbl.image = self.newspaper_YES
 	
 	# move up or down through categories
-	def change_category(self, direction):
+	def airwheel(self, direction, *args):
 		self.categories_frame.winfo_children()[self.selected_category].icon_lbl.configure(image=self.selected_NO)
 		self.categories_frame.winfo_children()[self.selected_category].icon_lbl.image = self.selected_NO
 		self.selected_category += direction
@@ -88,10 +88,12 @@ class Newsfeed(Frame):
 		self.categories_frame.winfo_children()[self.selected_category].icon_lbl.image = self.selected_YES
 		self.build_headlines()
 	
-	# get link of selected headline
-	def get_link(self):
-		return self.current_headlines[self.headline_titles[self.selected_headline]]
-		
+	# publish link of selected headline on double tap
+	def double_tap(self, *args):
+		link_json = {}
+		link_json["link"] = self.current_headlines[self.headline_titles[self.selected_headline]]
+		publish.publish(args[0], "/iotappdev/news/article/link/", link_json, args[1])
+	
 	# build Category frames
 	def build_categories(self):
 		self.title_lbl = Label(self.categories_frame, text="News", font=('Arial', 28), fg="white", bg="black")

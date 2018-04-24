@@ -1,3 +1,4 @@
+from app.mqtt import publish
 import requests
 import json
 import tkFont
@@ -10,6 +11,8 @@ from datetime import datetime
 class WeatherFeed(Frame):
 	def __init__(self, parent):
 		Frame.__init__(self, parent)
+		
+		self.configure(background='black')
 		
 		self.ip = ''
 		self.location = {}
@@ -74,7 +77,7 @@ class WeatherFeed(Frame):
 			frame.pack(side=TOP, anchor=CENTER, pady=20, fill=X)
 	
 	# move day in direction given
-	def change_day(self, direction):
+	def change_vertical_focus(self, direction, *args):
 		self.forecast_frame.winfo_children()[self.selected_day].selected_lbl.configure(image=self.selected_NO)
 		self.forecast_frame.winfo_children()[self.selected_day].selected_lbl.image = self.selected_NO
 		self.selected_day += direction
@@ -84,6 +87,13 @@ class WeatherFeed(Frame):
 			self.selected_day = 0
 		self.forecast_frame.winfo_children()[self.selected_day].selected_lbl.configure(image=self.selected_YES)
 		self.forecast_frame.winfo_children()[self.selected_day].selected_lbl.image = self.selected_YES
+		publish.publish(args[0], "/iotappdev/weather/day/", weather_display.forecast[weather_display.selected_day], args[1])
+	
+	def double_tap(self):
+		return
+	
+	def airwheel(self, direction, *args):
+		self.change_vertical_focus(direction, args)
 	
 	def create_entry(self, entry):
 		new_entry = {}

@@ -30,9 +30,8 @@ class NotesFeed(Frame):
 		self.build_notes()
 	
 	# move up or down through notes
-	def change_note(self, direction):
-		#~ print len(self.notes)
-		if len(self.notes) == 0:
+	def change_vertical_focus(self, direction, *args):
+		if self.notes is None:
 			return
 		self.notes_frame.winfo_children()[self.selected_note].icon_lbl.configure(image=self.selected_NO)
 		self.notes_frame.winfo_children()[self.selected_note].icon_lbl.image = self.selected_NO
@@ -46,23 +45,32 @@ class NotesFeed(Frame):
 		self.notes_frame.winfo_children()[self.selected_note].icon_lbl.configure(image=self.selected_YES)
 		self.notes_frame.winfo_children()[self.selected_note].icon_lbl.image = self.selected_YES
 	
-	def delete_note(self, lock):
-		with lock:
+	def double_tap(self, *args):
+		with args[1]:
 			self.firebase_db.delete('/notes', self.notes.keys()[self.selected_note - 1])
 			self.notes = self.firebase_db.get('/notes', None)
-			#~ self.notes_frame.winfo_children()[self.selected_note].destroy()
 			self.selected_note = 1
 			self.build_notes()
-			#~ self.notes_frame.winfo_children()[self.selected_note].icon_lbl.configure(image=self.selected_YES)
-			#~ self.notes_frame.winfo_children()[self.selected_note].icon_lbl.image = self.selected_YES
+	
+	def airwheel(self, direction, *args):
+		self.change_vertical_focus(direction)
+	
+	def get_new_notes(self):
+		self.notes = self.firebase_db.get('/notes', None)
+		self.build_notes()
 	
 	def build_notes(self):
+		for line in self.notes_frame.winfo_children():
+			line.destroy()
 		self.title_lbl = Label(self.notes_frame, text="Notes", font=('Arial', 28), fg="white", bg="black")
 		self.title_lbl.pack(side=TOP, anchor=NW, pady=10)
+		if self.notes is None:
+			return
 		for note in self.notes:
 			line = Note(self.notes_frame, self.notes[note], (self.notes.values()[0] == self.notes[note]))
 			line.pack(side=TOP, anchor=W)
 	
+
 		
 		#~ firebase_db.patch('/notes', {'02' : 'Is this real life?'})
 		
