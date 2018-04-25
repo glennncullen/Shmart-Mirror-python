@@ -1,3 +1,4 @@
+from app.mqtt import publish
 from Tkinter import *
 import random
 
@@ -29,11 +30,15 @@ class WelcomeFeed(Frame):
 			line.pack(side=LEFT, anchor=W)
 	
 	def check_auth(self, num):
-		print num, self.auth_num, (int(num) == self.auth_num)
 		if int(num) == self.auth_num:
 			return True
 		else:
 			return False
+	
+	def authorised(self, client, lock):
+		response_json = {}
+		response_json["auth"] = 'authorised'
+		publish.publish_async(client, '/iotappdev/android/auth/', response_json, lock)
 
 class Number(Frame):
 	def __init__(self, parent, number):

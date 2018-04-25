@@ -1,4 +1,5 @@
 from app.mqtt import publish
+import traceback
 import requests
 import json
 import tkFont
@@ -59,7 +60,7 @@ class WeatherFeed(Frame):
 					new_entry = self.create_entry(entry)
 					self.forecast.append(new_entry)
 		except Exception as error:
-			#~ traceback.print_exc()
+			traceback.print_exc()
 			print "Error requesting weather: %s" % error
 		
 		self.forecast_frame = Frame(self, bg='black')
@@ -87,16 +88,17 @@ class WeatherFeed(Frame):
 			self.selected_day = 0
 		self.forecast_frame.winfo_children()[self.selected_day].selected_lbl.configure(image=self.selected_YES)
 		self.forecast_frame.winfo_children()[self.selected_day].selected_lbl.image = self.selected_YES
-		publish.publish(args[0], "/iotappdev/weather/day/", weather_display.forecast[weather_display.selected_day], args[1])
+		publish.publish(args[0], "/iotappdev/weather/day/", self.forecast[self.selected_day], args[1])
 	
 	def double_tap(self, *args):
 		return
 	
 	def airwheel(self, direction, *args):
-		self.change_vertical_focus(direction, args)
+		self.change_vertical_focus(direction, args[0], args[1])
 	
 	def create_entry(self, entry):
 		new_entry = {}
+		new_entry["location"] = self.location["geoplugin_countryName"]
 		new_entry["description"] = entry["weather"][0]["description"]
 		new_entry["icon"] = entry["weather"][0]["icon"]
 		# convert kelvin to celcius
