@@ -77,6 +77,9 @@ class WeatherFeed(Frame):
 			frame = Day(self.forecast_frame, day, (day is self.forecast[self.selected_day]))
 			frame.pack(side=TOP, anchor=CENTER, pady=20, fill=X)
 	
+	def on_focus(self, *args):
+		publish.publish(args[0], "/iotappdev/weather/day/", self.forecast[self.selected_day], args[1])
+	
 	# move day in direction given
 	def change_vertical_focus(self, direction, *args):
 		self.forecast_frame.winfo_children()[self.selected_day].selected_lbl.configure(image=self.selected_NO)
@@ -94,7 +97,7 @@ class WeatherFeed(Frame):
 		return
 	
 	def airwheel(self, direction, *args):
-		self.change_vertical_focus(direction, args)
+		self.change_vertical_focus(direction, args[0], args[1])
 	
 	def create_entry(self, entry):
 		new_entry = {}

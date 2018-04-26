@@ -63,6 +63,11 @@ class NewsFeed(Frame):
 		self.headlines_frame.pack(side=BOTTOM, anchor=SW)
 		self.build_headlines()
 	
+	def on_focus(self, *args):
+		link_json = {}
+		link_json["link"] = self.current_headlines[self.headline_titles[self.selected_headline]]
+		publish.publish(args[0], "/iotappdev/news/article/link/", link_json, args[1])
+	
 	def change_vertical_focus(self, direction, *args):
 		if len(self.headline_titles) is 1:
 			return

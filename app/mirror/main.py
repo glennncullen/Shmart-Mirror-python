@@ -48,14 +48,25 @@ def auth_callback(client, userdata, message):
 			else:
 				response_json["auth"] = 'unauthorised'
 			publish.publish_async(mqtt_client, '/iotappdev/android/auth/', response_json, lock)
+			time.sleep(0.1)
+			publish.publish_async(mqtt_client, "/iotappdev/display/", {'display' : displays[selected_display].__class__.__name__}, lock)
 	except ValueError:
 		print "Unable to decode json for displayCallBack \n\t incoming message: ", message.payload
 
+def logout_callback(client, userdata, message):
+	try:
+		json_message = json.loads(message.payload)
+		#~ print json_message
+		if(json_message["logout"]):
+			logout()
+	except ValueError:
+		print "Unable to decode json for displayCallback \n\t incoming message", messsage.payload
 
 subscribe.subscribe_to(mqtt_client, "/iotappdev/news/article/link/", news_article_link_callback)
 subscribe.subscribe_to(mqtt_client, "/iotappdev/weather/day/", weather_day_callback)
 subscribe.subscribe_to(mqtt_client, "/iotappdev/display/", display_callback)
 subscribe.subscribe_to(mqtt_client, "/iotappdev/pi/auth/", auth_callback)
+subscribe.subscribe_to(mqtt_client, "/iotappdev/logout/", logout_callback)
 
 
 def publish_link():
@@ -65,6 +76,7 @@ def publish_link():
 
 def publish_current_display():
 	publish.publish(mqtt_client, "/iotappdev/display/", {'display' : displays[selected_display].__class__.__name__}, lock)
+
 
 selected_display = 0
 def change_display(direction):
@@ -82,6 +94,13 @@ def change_display(direction):
 		displays[selected_display].pack(anchor=NE, expand=YES, padx=40, pady=40)
 	else:
 		displays[selected_display].pack(fill=BOTH, expand=YES, padx=40, pady=40)
+
+def logout():
+	global selected_display
+	displays[selected_display].pack_forget()
+	displays.insert(0, WelcomeFeed(gui))
+	selected_display = 0
+	displays[selected_display].pack(fill=BOTH, expand=YES, padx=40, pady=40)
 
 @flicklib.double_tap()
 def doubletap(position):
@@ -104,11 +123,12 @@ def flick(start, finish):
 		if not isinstance(displays[selected_display], WelcomeFeed):
 			change_display(1)
 			publish_current_display()
+			displays[selected_display].on_focus(mqtt_client, lock)
 	elif flick_direction == 'ew':
 		if not isinstance(displays[selected_display], WelcomeFeed):
 			change_display(-1)
 			publish_current_display()
-
+			displays[selected_display].on_focus(mqtt_client, lock)
 
 some_value = 0
 @flicklib.airwheel()
@@ -131,7 +151,7 @@ gui.configure(background='black')
 gui.config(cursor="none")
 
 print 'starting WelcomeFeed'
-#~ displays.append(WelcomeFeed(gui))
+displays.append(WelcomeFeed(gui))
 print 'WelcomeFeed started'
 print 'starting NotesFeed'
 displays.append(NotesFeed(gui))
@@ -173,6 +193,7 @@ gui.bind('<Right>', change_display_right)
 
 def on_closing(event=None):
 	gui.destroy()
+	publish.publish(mqtt_client, "/iotappdev/logout/", {"logout": 1}, lock)
 	sys.exit
 
 gui.protocol("WM_DELETE_WINDOW", on_closing)

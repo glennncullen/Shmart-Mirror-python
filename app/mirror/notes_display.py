@@ -70,6 +70,8 @@ class NotesFeed(Frame):
 			line = Note(self.notes_frame, self.notes[note], (self.notes.values()[0] == self.notes[note]))
 			line.pack(side=TOP, anchor=W)
 	
+	def on_focus(self, *args):
+		return
 
 		
 		#~ firebase_db.patch('/notes', {'02' : 'Is this real life?'})
