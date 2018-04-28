@@ -102,6 +102,7 @@ class WeatherFeed(Frame):
 	
 	def update(self):
 		self.selected_day = 0
+		self.build_forecast()
 		return
 	
 	def create_entry(self, entry):

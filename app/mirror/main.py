@@ -3,7 +3,9 @@ from app.mirror.weather_display import WeatherFeed
 from app.mirror.news_display import NewsFeed
 from app.mirror.notes_display import NotesFeed
 from app.mirror.welcome_display import WelcomeFeed
+from app.mirror.camera_display import CameraFeed
 from threading import _RLock
+import traceback
 import time
 import json
 import flicklib
@@ -200,6 +202,9 @@ print 'NewsFeed started'
 print 'starting WeatherFeed'
 displays.append(WeatherFeed(gui))
 print 'WeatherFeed started'
+print 'Starting CameraFeed'
+displays.append(CameraFeed(gui))
+print 'CameraFeed started'
 
 displays[selected_display].pack(fill=BOTH, expand=YES, padx=40, pady=40)
 

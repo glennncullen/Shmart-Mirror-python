@@ -3,39 +3,21 @@ from app.mirror.weather_display import WeatherFeed
 from app.mirror.news_display import NewsFeed
 from app.mirror.notes_display import NotesFeed
 from app.mirror.welcome_display import WelcomeFeed
+from app.mirror.camera_display import CameraFeed
 from threading import _RLock
+import traceback
 import time
 import json
 import flicklib
 from Tkinter import *
 from ttk import *
 
+
 lock = _RLock()
 mqtt_client = connect.get_client()
 displays = []
 ready = False
 
-def news_article_link_callback(client, userdata, message):
-	try:
-		json_message = json.loads(message.payload)
-		#~ print(json_message["link"])
-	except ValueError:
-		print "Unable to decode json for testCallBack \n\t incoming message: ", message.payload
-
-def weather_day_callback(client, userdata, message):
-	try:
-		json_message = json.loads(message.payload)
-		#~ print json_message
-	except ValueError:
-		print "Unable to decode json for testCallBack \n\t incoming message: ", message.payload
-
-
-def display_callback(client, userdata, message):
-	try:
-		json_message = json.loads(message.payload)
-		#~ print "display_callback: %s" % json_message
-	except ValueError:
-		print "Unable to decode json for displayCallBack \n\t incoming message: ", message.payload
 
 def auth_callback(client, userdata, message):
 	try:
@@ -48,11 +30,21 @@ def auth_callback(client, userdata, message):
 				change_display(0)
 			else:
 				response_json["auth"] = 'unauthorised'
-			publish.publish_async(mqtt_client, '/iotappdev/android/auth/', response_json, lock)
+			publish.publish_async(
+				mqtt_client, 
+				'/iotappdev/android/auth/', 
+				response_json, 
+				lock
+				)
 			time.sleep(0.1)
-			publish.publish_async(mqtt_client, "/iotappdev/display/", {'display' : displays[selected_display].__class__.__name__}, lock)
+			publish.publish_async(
+				mqtt_client, 
+				"/iotappdev/display/", 
+				{'display' : displays[selected_display].__class__.__name__}, 
+				lock
+				)
 	except ValueError:
-		print "Unable to decode json for displayCallBack \n\t incoming message: ", message.payload
+		print "Unable to decode json for auth_callback \n\t incoming message: ", message.payload
 
 
 def new_notes_callback(client, userdata, message):
@@ -76,21 +68,13 @@ def logout_callback(client, userdata, message):
 	except ValueError:
 		print "Unable to decode json for logout_callback \n\t incoming message", messsage.payload
 
-subscribe.subscribe_to(mqtt_client, "/iotappdev/news/article/link/", news_article_link_callback)
-subscribe.subscribe_to(mqtt_client, "/iotappdev/weather/day/", weather_day_callback)
-subscribe.subscribe_to(mqtt_client, "/iotappdev/display/", display_callback)
+
+
 subscribe.subscribe_to(mqtt_client, "/iotappdev/pi/auth/", auth_callback)
 subscribe.subscribe_to(mqtt_client, "/iotappdev/pi/notes/new/", new_notes_callback)
 subscribe.subscribe_to(mqtt_client, "/iotappdev/logout/", logout_callback)
 
 
-def publish_link():
-	link_json = {}
-	link_json["link"] = news_display.get_link()
-	publish.publish(mqtt_client, "/iotappdev/news/article/link/", link_json, lock)
-
-def publish_current_display():
-	publish.publish(mqtt_client, "/iotappdev/display/", {'display' : displays[selected_display].__class__.__name__}, lock)
 
 
 selected_display = 0
@@ -125,6 +109,9 @@ def logout():
 	displays[selected_display].pack(fill=BOTH, expand=YES, padx=40, pady=40)
 	ready = True
 
+
+
+
 @flicklib.double_tap()
 def doubletap(position):
 	if not ready:
@@ -145,12 +132,22 @@ def flick(start, finish):
 	elif flick_direction == 'we':
 		if not isinstance(displays[selected_display], WelcomeFeed):
 			change_display(1)
-			publish_current_display()
+			publish.publish(
+				mqtt_client, 
+				"/iotappdev/display/", 
+				{'display' : displays[selected_display].__class__.__name__}, 
+				lock
+				)
 			displays[selected_display].on_focus(mqtt_client, lock)
 	elif flick_direction == 'ew':
 		if not isinstance(displays[selected_display], WelcomeFeed):
 			change_display(-1)
-			publish_current_display()
+			publish.publish(
+				mqtt_client, 
+				"/iotappdev/display/", 
+				{'display' : displays[selected_display].__class__.__name__}, 
+				lock
+				)
 			displays[selected_display].on_focus(mqtt_client, lock)
 
 some_value = 0
@@ -168,6 +165,10 @@ def spinny(delta):
 		amount, some_value = 0, 0
 		displays[selected_display].airwheel(-1, mqtt_client, lock)
 
+
+
+
+
 # GUI 
 gui = Tk()
 gui.configure(background='black')
@@ -175,8 +176,19 @@ gui.config(cursor="none")
 
 progress_style = Style()
 progress_style.theme_use('clam')
-progress_style.configure("white.Horizontal.TProgressbar", foregound='black', background='black', throughcolor='black')
-progress = Progressbar(gui, style="white gr.Horizontal.TProgressbar", orient=HORIZONTAL, length=gui.winfo_screenwidth(), mode='determinate')
+progress_style.configure(
+	"white.Horizontal.TProgressbar", 
+	foregound='black', 
+	background='black', 
+	throughcolor='black'
+	)
+progress = Progressbar(
+	gui, 
+	style="white gr.Horizontal.TProgressbar", 
+	orient=HORIZONTAL, 
+	length=gui.winfo_screenwidth(), 
+	mode='determinate'
+	)
 
 print 'starting WelcomeFeed'
 displays.append(WelcomeFeed(gui))
@@ -190,9 +202,18 @@ print 'NewsFeed started'
 print 'starting WeatherFeed'
 displays.append(WeatherFeed(gui))
 print 'WeatherFeed started'
+print 'Starting CameraFeed'
+displays.append(CameraFeed(gui))
+print 'CameraFeed started'
 
 displays[selected_display].pack(fill=BOTH, expand=YES, padx=40, pady=40)
-publish_current_display()
+
+publish.publish(
+	mqtt_client, 
+	"/iotappdev/display/", 
+	{'display' : displays[selected_display].__class__.__name__}, 
+	lock
+	)
 
 ready = True
 
@@ -202,28 +223,19 @@ def enter_fullscreen(event=None):
 def close_fullscreen(event=None):
 	gui.attributes("-fullscreen", False)
 
-
-def change_display_left(event=None):
-	change_display(-1)
-	publish_current_display()
-
-def change_display_right(event=None):
-	change_display(1)
-	publish_current_display()
-
+def on_closing(event=None):
+	gui.destroy()
+	publish.publish_async(
+		mqtt_client, 
+		"/iotappdev/logout/", 
+		{"logout": 1}, 
+		lock
+		)
+	sys.exit
 
 gui.bind('<Shift-Up>', enter_fullscreen)
 gui.bind('<Escape>', close_fullscreen)
-#~ gui.bind('<Up>', move_note_up)
-#~ gui.bind('<Down>', move_note_down)
-gui.bind('<Left>', change_display_left)
-gui.bind('<Right>', change_display_right)
-#~ gui.bind('<Return>', send_auth)
-
-def on_closing(event=None):
-	gui.destroy()
-	publish.publish_async(mqtt_client, "/iotappdev/logout/", {"logout": 1}, lock)
-	sys.exit
 
 gui.protocol("WM_DELETE_WINDOW", on_closing)
+#~ gui.attributes("-fullscreen", True)disgusting
 gui.mainloop()

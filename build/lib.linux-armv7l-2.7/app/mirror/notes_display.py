@@ -1,3 +1,4 @@
+import traceback
 from Tkinter import *
 from PIL import Image
 from PIL import ImageTk

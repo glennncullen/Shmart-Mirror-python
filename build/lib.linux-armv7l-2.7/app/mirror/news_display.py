@@ -1,3 +1,4 @@
+import traceback
 from app.mqtt import publish
 from Tkinter import *
 import feedparser
@@ -73,8 +74,8 @@ class NewsFeed(Frame):
 			if category != "News":
 				url = "https://news.google.com/news/rss/headlines/section/topic/%s?ned=en_ie&gl=IE&hl=en-IE" % self.category_url[category]
 				self.rss_feeds[category] = feedparser.parse(url)
-		self.selected_headline = 1
 		self.selected_category = 1
+		self.build_categories()
 		self.build_headlines()
 	
 	def change_vertical_focus(self, direction, *args):
@@ -111,12 +112,15 @@ class NewsFeed(Frame):
 	
 	# build Category frames
 	def build_categories(self):
+		for line in self.categories_frame.winfo_children():
+			line.destroy()
 		self.title_lbl = Label(self.categories_frame, text="News", font=('Arial', 28), fg="white", bg="black")
 		self.title_lbl.pack(side=TOP, anchor=NW)
 		for category in self.category_names:
 			line = Category(self.categories_frame, category, self.category_names[0])
 			line.pack(side=TOP, anchor=W)
-		self.category_names.insert(0, 'News')
+		if self.category_names[0] != 'News':
+			self.category_names.insert(0, 'News')
 	
 	# build Headline frames
 	def build_headlines(self):
@@ -141,7 +145,6 @@ class NewsFeed(Frame):
 					line.pack(side=TOP, anchor=W)
 				if len(self.headlines_frame.winfo_children()) > 4:
 					break
-			
 		except Exception as error:
 			traceback.print_exc()
 			print "Error: %s. Unable to retrieve news." % error

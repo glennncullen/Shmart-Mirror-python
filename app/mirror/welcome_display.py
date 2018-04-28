@@ -1,3 +1,4 @@
+import traceback
 from app.mqtt import publish
 from Tkinter import *
 import random
