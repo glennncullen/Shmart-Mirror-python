@@ -12,6 +12,7 @@ from datetime import datetime
 class WeatherFeed(Frame):
 	def __init__(self, parent):
 		Frame.__init__(self, parent)
+		self.parent = parent
 		
 		self.configure(background='black')
 		
@@ -98,6 +99,10 @@ class WeatherFeed(Frame):
 	
 	def airwheel(self, direction, *args):
 		self.change_vertical_focus(direction, args[0], args[1])
+	
+	def update(self):
+		self.selected_day = 0
+		return
 	
 	def create_entry(self, entry):
 		new_entry = {}

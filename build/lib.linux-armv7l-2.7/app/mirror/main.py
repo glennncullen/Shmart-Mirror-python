@@ -8,6 +8,7 @@ import time
 import json
 import flicklib
 from Tkinter import *
+from ttk import *
 
 lock = _RLock()
 mqtt_client = connect.get_client()
@@ -53,19 +54,33 @@ def auth_callback(client, userdata, message):
 	except ValueError:
 		print "Unable to decode json for displayCallBack \n\t incoming message: ", message.payload
 
+
+def new_notes_callback(client, userdata, message):
+	try:
+		json_message = json.loads(message.payload)
+		#~ print json_message
+		if(json_message["new"]):
+			for display in displays:
+				if isinstance(display, NotesFeed):
+					display.get_new_notes()
+	except ValueError:
+		print "Unable to decode json for new_notes_callback \n\t incoming message", messsage.payload
+		
+
 def logout_callback(client, userdata, message):
 	try:
 		json_message = json.loads(message.payload)
 		#~ print json_message
 		if(json_message["logout"]):
 			logout()
-		except ValueError:
-			print "Unable to decode json for displayCallback \n\t incoming message", messsage.payload
+	except ValueError:
+		print "Unable to decode json for logout_callback \n\t incoming message", messsage.payload
 
 subscribe.subscribe_to(mqtt_client, "/iotappdev/news/article/link/", news_article_link_callback)
 subscribe.subscribe_to(mqtt_client, "/iotappdev/weather/day/", weather_day_callback)
 subscribe.subscribe_to(mqtt_client, "/iotappdev/display/", display_callback)
 subscribe.subscribe_to(mqtt_client, "/iotappdev/pi/auth/", auth_callback)
+subscribe.subscribe_to(mqtt_client, "/iotappdev/pi/notes/new/", new_notes_callback)
 subscribe.subscribe_to(mqtt_client, "/iotappdev/logout/", logout_callback)
 
 
@@ -76,13 +91,6 @@ def publish_link():
 
 def publish_current_display():
 	publish.publish(mqtt_client, "/iotappdev/display/", {'display' : displays[selected_display].__class__.__name__}, lock)
-
-
-def logout():
-	displays[selected_display].pack_forget()
-	displays.insert(0, WelcomeFeed(gui))
-	selected_display = 0
-	displays[selected_display].pack(fill=BOTH, expand=YES, padx=40, pady=40)
 
 
 selected_display = 0
@@ -102,6 +110,20 @@ def change_display(direction):
 	else:
 		displays[selected_display].pack(fill=BOTH, expand=YES, padx=40, pady=40)
 
+def logout():
+	ready = False
+	global selected_display
+	displays[selected_display].pack_forget()
+	progress.pack()
+	progress.start()
+	for display in displays:
+		display.update()
+	displays.insert(0, WelcomeFeed(gui))
+	selected_display = 0
+	progress.stop()
+	progress.pack_forget()
+	displays[selected_display].pack(fill=BOTH, expand=YES, padx=40, pady=40)
+	ready = True
 
 @flicklib.double_tap()
 def doubletap(position):
@@ -151,6 +173,11 @@ gui = Tk()
 gui.configure(background='black')
 gui.config(cursor="none")
 
+progress_style = Style()
+progress_style.theme_use('clam')
+progress_style.configure("white.Horizontal.TProgressbar", foregound='black', background='black', throughcolor='black')
+progress = Progressbar(gui, style="white gr.Horizontal.TProgressbar", orient=HORIZONTAL, length=gui.winfo_screenwidth(), mode='determinate')
+
 print 'starting WelcomeFeed'
 displays.append(WelcomeFeed(gui))
 print 'WelcomeFeed started'
@@ -163,6 +190,7 @@ print 'NewsFeed started'
 print 'starting WeatherFeed'
 displays.append(WeatherFeed(gui))
 print 'WeatherFeed started'
+
 displays[selected_display].pack(fill=BOTH, expand=YES, padx=40, pady=40)
 publish_current_display()
 
@@ -194,6 +222,7 @@ gui.bind('<Right>', change_display_right)
 
 def on_closing(event=None):
 	gui.destroy()
+	publish.publish_async(mqtt_client, "/iotappdev/logout/", {"logout": 1}, lock)
 	sys.exit
 
 gui.protocol("WM_DELETE_WINDOW", on_closing)

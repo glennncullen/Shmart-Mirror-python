@@ -24,6 +24,9 @@ class WelcomeFeed(Frame):
 	def airwheel(self, *args):
 		return
 	
+	def update(self):
+		return
+	
 	def build_welcome(self):
 		for number in str(self.auth_num):
 			line = Number(self.welcome_frame, number)

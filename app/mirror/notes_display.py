@@ -12,7 +12,7 @@ class NotesFeed(Frame):
 		self.configure(background='black')
 		
 		self.firebase_db = firebase.FirebaseApplication('https://shmart-mirror.firebaseio.com/', None)
-		self.notes = self.firebase_db.get('/notes', None)
+		self.notes = self.firebase_db.get("", None)
 		self.selected_note = 1
 		
 		self.selected_YES_img = Image.open("assets/selected_YES.jpg")
@@ -47,8 +47,8 @@ class NotesFeed(Frame):
 	
 	def double_tap(self, *args):
 		with args[1]:
-			self.firebase_db.delete('/notes', self.notes.keys()[self.selected_note - 1])
-			self.notes = self.firebase_db.get('/notes', None)
+			self.firebase_db.delete('', self.notes.keys()[self.selected_note - 1])
+			self.notes = self.firebase_db.get('', None)
 			self.selected_note = 1
 			self.build_notes()
 	
@@ -56,7 +56,8 @@ class NotesFeed(Frame):
 		self.change_vertical_focus(direction)
 	
 	def get_new_notes(self):
-		self.notes = self.firebase_db.get('/notes', None)
+		self.notes = self.firebase_db.get('', None)
+		self.selected_note = 1
 		self.build_notes()
 	
 	def build_notes(self):
@@ -70,15 +71,11 @@ class NotesFeed(Frame):
 			line = Note(self.notes_frame, self.notes[note], (self.notes.values()[0] == self.notes[note]))
 			line.pack(side=TOP, anchor=W)
 	
+	def update(self):
+		self.get_new_notes()
+	
 	def on_focus(self, *args):
 		return
-
-		
-		#~ firebase_db.patch('/notes', {'02' : 'Is this real life?'})
-		
-		#~ firebase_db.get('/notes', None)
-		
-		#~ firebase_db.delete('/notes', '02')
 
 class Note(Frame):
 	def __init__(self, parent, note, selected):

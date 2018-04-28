@@ -68,6 +68,15 @@ class NewsFeed(Frame):
 		link_json["link"] = self.current_headlines[self.headline_titles[self.selected_headline]]
 		publish.publish(args[0], "/iotappdev/news/article/link/", link_json, args[1])
 	
+	def update(self):
+		for category in self.category_names:
+			if category != "News":
+				url = "https://news.google.com/news/rss/headlines/section/topic/%s?ned=en_ie&gl=IE&hl=en-IE" % self.category_url[category]
+				self.rss_feeds[category] = feedparser.parse(url)
+		self.selected_headline = 1
+		self.selected_category = 1
+		self.build_headlines()
+	
 	def change_vertical_focus(self, direction, *args):
 		if len(self.headline_titles) is 1:
 			return
