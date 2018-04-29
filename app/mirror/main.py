@@ -111,6 +111,7 @@ def change_display(direction):
 		displays[selected_display].pack(fill=BOTH, expand=YES, padx=40, pady=40)
 
 # function to handle logout event
+#  - if on welcome_display do nothing
 #  - set ready to False
 #  - remove current display
 #  - add progress bar and start
@@ -121,6 +122,8 @@ def change_display(direction):
 #  - show Welcome screen
 #  - set ready to True
 def logout():
+	if isinstance(displays[selected_display], WelcomeFeed):
+		return
 	ready = False
 	global selected_display
 	displays[selected_display].pack_forget()
