@@ -12,8 +12,6 @@ app/mqtt/__init__.py
 app/mqtt/connect.py
 app/mqtt/publish.py
 app/mqtt/subscribe.py
-app/sensors/__init__.py
-app/sensors/flick.py
 shmart_mirror.egg-info/PKG-INFO
 shmart_mirror.egg-info/SOURCES.txt
 shmart_mirror.egg-info/dependency_links.txt

@@ -4,6 +4,7 @@ import json
 import logging
 import traceback
 
+# publish in queue using mqtt_client and lock from main.py
 def publish(client, path, publish_json, lock, qos=1):
 	logging.basicConfig()
 	lock.acquire()
@@ -17,6 +18,7 @@ def publish(client, path, publish_json, lock, qos=1):
 	finally:
 		lock.release()
 
+# publish asynchronously using mqtt_client and lock from main.py
 def publish_async(client, path, publish_json, lock, qos=1):
 	logging.basicConfig()
 	lock.acquire()

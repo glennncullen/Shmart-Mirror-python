@@ -12,13 +12,20 @@ import flicklib
 from Tkinter import *
 from ttk import *
 
-
+# variables for lock and client for symmetry throughout app
 lock = _RLock()
 mqtt_client = connect.get_client()
+# array of displays
 displays = []
+# initialise ready variable to False until system is ready
 ready = False
 
-
+# callback for /iotappdev/pi/auth/
+#  - makes sure current display is welcome_display
+#  - checks if received auth number is correct
+#  	* if correct call change display method with 0 direction and publish authorised to AWS
+#   * if not correct publish unauthorised to AWS
+#  - asyn publishing used so that callback does not continually publish
 def auth_callback(client, userdata, message):
 	try:
 		json_message = json.loads(message.payload)
@@ -46,7 +53,9 @@ def auth_callback(client, userdata, message):
 	except ValueError:
 		print "Unable to decode json for auth_callback \n\t incoming message: ", message.payload
 
-
+# callback for /iotappdev/pi/notes/new/
+#  - if json at 'new' is true and display is notes_display, 
+#    call get_new_notes function on display
 def new_notes_callback(client, userdata, message):
 	try:
 		json_message = json.loads(message.payload)
@@ -57,8 +66,8 @@ def new_notes_callback(client, userdata, message):
 					display.get_new_notes()
 	except ValueError:
 		print "Unable to decode json for new_notes_callback \n\t incoming message", messsage.payload
-		
 
+# callback for /iotappdev/logout/
 def logout_callback(client, userdata, message):
 	try:
 		json_message = json.loads(message.payload)
@@ -68,15 +77,22 @@ def logout_callback(client, userdata, message):
 	except ValueError:
 		print "Unable to decode json for logout_callback \n\t incoming message", messsage.payload
 
-
-
+# subscribe to relevant topics and set appropriate callbacks
 subscribe.subscribe_to(mqtt_client, "/iotappdev/pi/auth/", auth_callback)
 subscribe.subscribe_to(mqtt_client, "/iotappdev/pi/notes/new/", new_notes_callback)
 subscribe.subscribe_to(mqtt_client, "/iotappdev/logout/", logout_callback)
 
-
-
-
+# function to change display
+#  - remove current display from main frame
+#  - if current display is WelcomeFeed
+#   * destroy welcome display and remove from displays array
+#  -  add direction amount to selected_display
+#  - if selected_display is less that 0 or greater
+#    thank length of displays array, keep within bounds
+#  - if next display is WeatherFeed
+#   * pack differently to main frame
+#  - else
+#   * pack other displays the same way
 selected_display = 0
 def change_display(direction):
 	global selected_display
@@ -94,7 +110,20 @@ def change_display(direction):
 	else:
 		displays[selected_display].pack(fill=BOTH, expand=YES, padx=40, pady=40)
 
+# function to handle logout event
+#  - if on welcome_display do nothing
+#  - set ready to False
+#  - remove current display
+#  - add progress bar and start
+#  - for each display, call the update function
+#  - create new instance of WelcomeFeed and insert at 0 position of displays
+#  - set selected_display to 0
+#  - stop progress bar and remove from main frame
+#  - show Welcome screen
+#  - set ready to True
 def logout():
+	if isinstance(displays[selected_display], WelcomeFeed):
+		return
 	ready = False
 	global selected_display
 	displays[selected_display].pack_forget()
@@ -111,14 +140,33 @@ def logout():
 
 
 
-
+# function to handle flick hat double tap gesture
+#  - if ready is False do nothing
+#  - 'position is not None' indicates a double tap event
+#  - call .double_tap on selected_display
 @flicklib.double_tap()
 def doubletap(position):
 	if not ready:
 		return
 	if position is not None:
-		displays[selected_display].double_tap(mqtt_client, lock)
+		displays[selected_display].double_tap(mqtt_client, lock, ready)
 
+
+# funtion to handle flick hat flick gesture
+#  - if ready is False do nothing
+#  - indicate direction in short variable with first letter from start and finish
+#  - if North to South 'ns'
+#   * call change_vertical_direction on selected display with direction of 1
+#  - if South to North 'sn'
+#   * call change_vertical_direction on selected display with direction of -1
+#  - if West to East 'we'
+#   * if selected_display is WelcomeFeed then do nothing
+#   * call change display function with direction of 1
+#   * publish display now in focus
+#  - if East to West 'ew'
+#   * if selected_display is WelcomeFeed then do nothing
+#   * call change display function with direction of -1
+#   * publish display now in focus
 @flicklib.flick()
 def flick(start, finish):
 	if not ready:
@@ -150,6 +198,15 @@ def flick(start, finish):
 				)
 			displays[selected_display].on_focus(mqtt_client, lock)
 
+# function to handler flick hat airwheel gesture
+#  - if ready is False do nothing
+#  - create a value using the delta from flick library
+#  - if value goes above 7.5
+#   * reset amount and some_value to 0
+#   * call airwheel function on selected display with direction of 1
+#  - if value goes below 7.5
+#   * reset amount and some_value to 0
+#   * call airwheel function on selected display with direction of -1
 some_value = 0
 @flicklib.airwheel()
 def spinny(delta):
@@ -166,10 +223,24 @@ def spinny(delta):
 		displays[selected_display].airwheel(-1, mqtt_client, lock)
 
 
-
-
-
-# GUI 
+# GUI
+# create gui instance of TK
+# set background to black
+# don't show cursor on gui
+# initialise Style object for progress bar
+# create instance of WelcomeFeed and append to dispalys array
+# create instance of NotesFeed and append to dispalys array
+# create instance of NewsFeed and append to dispalys array
+# create instance of WeatherFeed and append to dispalys array
+# create instance of CameraFeed and append to dispalys array
+# show display in position 0
+# publish current display to AWS
+# set ready variable to True
+# define call back functionality for button binds
+# bind Shift-Up to making gui fullscreen
+# bind Escape to making gui not fullscreen
+# set on_closing function for when gui window is exited
+# start main loop
 gui = Tk()
 gui.configure(background='black')
 gui.config(cursor="none")
@@ -217,12 +288,18 @@ publish.publish(
 
 ready = True
 
+# function to set gui to fullscreen
 def enter_fullscreen(event=None):
 	gui.attributes("-fullscreen", True)
 
+# function to remove fullscreen
 def close_fullscreen(event=None):
 	gui.attributes("-fullscreen", False)
 
+# function to handle gui window being closed
+#  - destroy gui
+#  - publish logout to AWS
+#  - exit the system
 def on_closing(event=None):
 	gui.destroy()
 	publish.publish_async(
@@ -237,5 +314,5 @@ gui.bind('<Shift-Up>', enter_fullscreen)
 gui.bind('<Escape>', close_fullscreen)
 
 gui.protocol("WM_DELETE_WINDOW", on_closing)
-#~ gui.attributes("-fullscreen", True)disgusting
+#~ gui.attributes("-fullscreen", True)
 gui.mainloop()

@@ -8,8 +8,7 @@ setup(
     packages=[
 		'app', 
 		'app.mqtt', 
-		'app.mirror', 
-		'app.sensors'
+		'app.mirror'
 		],
     version="1.5",
     author='Glenn Cullen',

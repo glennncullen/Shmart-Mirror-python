@@ -10,10 +10,13 @@ class NewsFeed(Frame):
 	def __init__(self, parent):
 		Frame.__init__(self, parent)
 		
+		# keep track of user selection
 		self.selected_headline = 1
 		self.current_headlines = {}
+		# array of current headline titles 
 		self.headline_titles = []
 		
+		# array of news categories
 		self.configure(background='black')
 		self.selected_category = 1
 		self.category_names = [
@@ -26,6 +29,7 @@ class NewsFeed(Frame):
 						'Science',
 						'Health'
 						]
+		# array of link segments for each category
 		self.category_url = {
 			'World' : "WORLD.en_ie/World",
 			'Ireland' : "NATION.en_ie/Ireland",
@@ -36,39 +40,53 @@ class NewsFeed(Frame):
 			'Science' : "SCIENCE.en_ie/Science",
 			'Health' : "HEALTH.en_ie/Health"
 		}
+		
+		# image for selected category
 		self.selected_YES_img = Image.open("assets/selected_YES.jpg")
 		self.selected_YES_img = self.selected_YES_img.resize((16, 16))
 		self.selected_YES_img = self.selected_YES_img.convert('RGB')
 		self.selected_YES = ImageTk.PhotoImage(self.selected_YES_img)
 		
+		# image for selected headline
 		self.newspaper_YES_img = Image.open("assets/newspaper_YES.jpg")
 		self.newspaper_YES_img = self.newspaper_YES_img.resize((16, 16))
 		self.newspaper_YES_img = self.newspaper_YES_img.convert('RGB')
 		self.newspaper_YES = ImageTk.PhotoImage(self.newspaper_YES_img)
 		
+		# image for unselected category/headline
 		self.selected_NO_img = Image.open("assets/selected_NO.jpg")
 		self.selected_NO_img = self.selected_NO_img.resize((16, 16))
 		self.selected_NO_img = self.selected_NO_img.convert('RGB')
 		self.selected_NO = ImageTk.PhotoImage(self.selected_NO_img)
 		
+		# dictionary of rss feed for different categories
 		self.rss_feeds = {}
+		
+		# url is built using the category arrays
+		# url is called and parsed by feedparser
+		# stored in the relevant section of the rss dict
 		for category in self.category_names:
 			url = "https://news.google.com/news/rss/headlines/section/topic/%s?ned=en_ie&gl=IE&hl=en-IE" % self.category_url[category]
 			self.rss_feeds[category] = feedparser.parse(url)
 		
+		# child frame for categories
 		self.categories_frame = Frame(self, bg='black')
 		self.categories_frame.pack(side=TOP, anchor=NE)
 		self.build_categories()
 		
+		# child frame for headlines
 		self.headlines_frame = Frame(self, bg='black')
 		self.headlines_frame.pack(side=BOTTOM, anchor=SW)
 		self.build_headlines()
 	
+	# when display is on focus, selected link is sent to AWS
 	def on_focus(self, *args):
 		link_json = {}
 		link_json["link"] = self.current_headlines[self.headline_titles[self.selected_headline]]
 		publish.publish(args[0], "/iotappdev/news/article/link/", link_json, args[1])
 	
+	# when display is updated, get latest headlines
+	# and reset variables
 	def update(self):
 		for category in self.category_names:
 			if category != "News":
@@ -78,6 +96,8 @@ class NewsFeed(Frame):
 		self.build_categories()
 		self.build_headlines()
 	
+	# when flick hat receives vertical gesture
+	# move headline selection up or down
 	def change_vertical_focus(self, direction, *args):
 		if len(self.headline_titles) is 1:
 			return
@@ -91,6 +111,7 @@ class NewsFeed(Frame):
 		self.headlines_frame.winfo_children()[self.selected_headline].icon_lbl.configure(image=self.newspaper_YES)
 		self.headlines_frame.winfo_children()[self.selected_headline].icon_lbl.image = self.newspaper_YES
 	
+	# when flick hat recieves airwheel gesture
 	# move up or down through categories
 	def airwheel(self, direction, *args):
 		self.categories_frame.winfo_children()[self.selected_category].icon_lbl.configure(image=self.selected_NO)
@@ -110,7 +131,7 @@ class NewsFeed(Frame):
 		link_json["link"] = self.current_headlines[self.headline_titles[self.selected_headline]]
 		publish.publish(args[0], "/iotappdev/news/article/link/", link_json, args[1])
 	
-	# build Category frames
+	# destroy previous Category frames and rebuild
 	def build_categories(self):
 		for line in self.categories_frame.winfo_children():
 			line.destroy()
@@ -122,7 +143,7 @@ class NewsFeed(Frame):
 		if self.category_names[0] != 'News':
 			self.category_names.insert(0, 'News')
 	
-	# build Headline frames
+	# destroy previous Headline frames and rebuild
 	def build_headlines(self):
 		try:
 			self.selected_headline = 1
@@ -152,7 +173,7 @@ class NewsFeed(Frame):
 
 # small frame for displaying categories
 # if category being built is selected
-# a white dot is added beside the category name
+# selected_YES image is added beside the category name
 class Category(Frame):
 	def __init__(self, parent, category_name, selected_category_name):
 		Frame.__init__(self, parent, bg='black')
@@ -174,6 +195,8 @@ class Category(Frame):
 
 
 # small frame for displaying the headlines
+# if headline being built is selected
+# newspaper_YES image is added beside the headline
 class Headline(Frame):
 	def __init__(self, parent, headline, is_selected):
 		Frame.__init__(self, parent, bg='black')
