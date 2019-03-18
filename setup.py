@@ -15,7 +15,7 @@ setup(
     description='Home Smart Mirror application',
     install_requires=[
 		'feedparser', 
-		'requests==2.18.0', 
+		'requests>=2.20.0', 
 		'Pillow', 
 		'python-firebase', 
 		'google-cloud-storage'
